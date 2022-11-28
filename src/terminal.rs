@@ -27,6 +27,7 @@ pub struct App {
     pub status: String,
     pub lang_stats: HashMap<String, f64>,
     pub file_stats: HashMap<String, (u32, u32, u64)>,
+    pub file_time: Vec<String>,
     pub tab: u32,
 }
 
@@ -45,7 +46,7 @@ fn ui(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App) {
             Block::default()
                 .borders(Borders::ALL)
                 .title("Tabs")
-                .border_style(Style::default().fg(Color::LightBlue))
+                .border_style(Style::default().fg(Color::LightBlue)),
         )
         .highlight_style(Style::default().fg(Color::LightBlue))
         .select(app.tab as usize);

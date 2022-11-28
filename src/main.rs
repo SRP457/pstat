@@ -17,8 +17,16 @@ fn main() -> Result<(), io::Error> {
         None => ".",
     };
 
-    let (file_stats, proj_size) = list_files(path);
+    let (file_stats, proj_size, times) = list_files(path);
     let lang_stats = get_percentages(&file_stats, proj_size);
+
+    let mut count_time: Vec<(&String, &u64)> = times.iter().collect();
+    count_time.sort_by(|a, b| b.1.cmp(a.1));
+
+    let mut file_time: Vec<String> = Vec::new();
+    for i in count_time.iter().take(5) {
+        file_time.push(i.0.to_string());
+    }
 
     let output = Command::new("tree")
         .arg(path)
@@ -60,6 +68,7 @@ fn main() -> Result<(), io::Error> {
         branches,
         log,
         status,
+        file_time,
         tab: 0,
     };
 

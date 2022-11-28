@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
+use std::time::SystemTime;
 use walkdir::WalkDir;
 
 pub fn count_lines(file: &Path) -> u32 {
@@ -10,12 +11,16 @@ pub fn count_lines(file: &Path) -> u32 {
     contents.lines().count().try_into().unwrap()
 }
 
-pub fn list_files(path: &str) -> (HashMap<String, (u32, u32, u64)>, u64) {
+pub fn list_files(path: &str) -> (HashMap<String, (u32, u32, u64)>, u64, HashMap<String, u64>) {
     let mut file_counts: HashMap<String, (u32, u32, u64)> = HashMap::new();
+    let mut times: HashMap<String, u64> = HashMap::new();
+
     let ext_map = HashMap::from([
         ("rs", String::from("Rust")),
         ("json", String::from("JSON")),
         ("py", String::from("Python")),
+        ("go", String::from("Go")),
+        ("bash", String::from("Bash")),
     ]);
     let mut proj_size: u64 = 0;
 
@@ -30,8 +35,17 @@ pub fn list_files(path: &str) -> (HashMap<String, (u32, u32, u64)>, u64) {
                 None => "Undefined",
             };
 
-            let extensions = vec!["rs", "json", "py"];
-            if extensions.iter().any(|e| ext.contains(e)) {
+            let extensions = vec!["rs", "json", "py", "go", "bash"];
+            if extensions.iter().any(|e| ext.eq(*e)) {
+                let mtime = file.metadata().unwrap().modified().expect("0");
+
+                let mtime = mtime
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .expect("File A thinks it was created before Epoch")
+                    .as_secs();
+
+                times.insert(file.file_name().to_str().expect("msg").to_string(), mtime);
+
                 let size = file.metadata().unwrap().len();
                 proj_size += size;
                 let lc = count_lines(file.path());
@@ -48,8 +62,8 @@ pub fn list_files(path: &str) -> (HashMap<String, (u32, u32, u64)>, u64) {
             }
         }
     }
-    // println!("{:?}", file_counts);
-    (file_counts, proj_size)
+
+    (file_counts, proj_size, times)
 }
 
 pub fn get_percentages(

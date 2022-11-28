@@ -69,6 +69,11 @@ fn draw_table(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
         .split(area);
 
+    let chunks1 = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .split(chunks[1]);
+
     let rows = app.file_stats.iter().map(|f| {
         let cells = vec![
             Cell::from(f.0.to_string()),
@@ -97,7 +102,18 @@ fn draw_table(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App
             Constraint::Length(10),
             Constraint::Length(12),
         ]);
-    f.render_widget(table, chunks[1]);
+    f.render_widget(table, chunks1[0]);
+
+    let file_time = app.file_time.clone().join("\n");
+    let paragraph = Paragraph::new(file_time)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Recently Modified")
+                .border_style(Style::default().fg(Color::LightBlue)),
+        )
+        .wrap(Wrap { trim: true });
+    f.render_widget(paragraph, chunks1[1]);
 }
 
 fn draw_gauge(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App) {

@@ -1,6 +1,7 @@
 use std::env;
 use std::io;
 use std::process::Command;
+mod ui;
 
 mod stats;
 use crate::stats::{get_percentages, list_files};
@@ -25,12 +26,41 @@ fn main() -> Result<(), io::Error> {
         .expect("Tree command failed");
     let output = String::from_utf8(output.stdout).unwrap();
 
+    let branches = Command::new("git")
+        .arg("-C")
+        .arg(path)
+        .arg("branch")
+        .output()
+        .expect("git branch command failed");
+    let branches = String::from_utf8(branches.stdout).unwrap();
+
+    let log = Command::new("git")
+        .arg("-C")
+        .arg(path)
+        .arg("log")
+        .arg("-n 5")
+        .output()
+        .expect("git log command failed");
+    let log = String::from_utf8(log.stdout).unwrap();
+
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(path)
+        .arg("status")
+        .output()
+        .expect("git status command failed");
+    let status = String::from_utf8(status.stdout).unwrap();
+
     let mut app = App {
         scroll: (0, 0),
         tree: output,
         path: String::from(path),
-        file_stats: file_stats,
-        lang_stats: lang_stats,
+        file_stats,
+        lang_stats,
+        branches,
+        log,
+        status,
+        tab: 0,
     };
 
     setup_terminal(&mut app)

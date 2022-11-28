@@ -9,109 +9,53 @@ use std::{
 };
 use tui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Layout},
     style::{Color, Style},
-    symbols,
-    widgets::{BarChart, Block, Borders, Cell, Paragraph, Row, Table, Wrap},
+    text::{Span, Spans},
+    widgets::{Block, Borders, Tabs},
     Frame, Terminal,
 };
+
+use crate::ui;
 
 pub struct App {
     pub scroll: (u16, u16),
     pub tree: String,
     pub path: String,
+    pub branches: String,
+    pub log: String,
+    pub status: String,
     pub lang_stats: HashMap<String, f64>,
     pub file_stats: HashMap<String, (u32, u32, u64)>,
+    pub tab: u32,
 }
 
 fn ui(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App) {
-    let size = f.size();
-    let block = Block::default()
-        .title("Project Stats")
-        .borders(Borders::ALL);
-    f.render_widget(block, size);
-
     let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .margin(2)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(size);
+        .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
+        .split(f.size());
 
-    draw_tree(f, chunks[0], app);
-    draw_gauge(f, chunks[1], app);
-    draw_table(f, chunks[1], app);
-}
+    let tabs_list = vec![
+        Spans::from(Span::styled("Home", Style::default().fg(Color::White))),
+        Spans::from(Span::styled("Git", Style::default().fg(Color::White))),
+    ];
 
-fn draw_tree(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App) {
-    let tree = app.tree.clone();
-    let paragraph = Paragraph::new(tree)
-        .block(Block::default().borders(Borders::ALL).title("Project Tree"))
-        .wrap(Wrap { trim: true })
-        .scroll(app.scroll);
-    f.render_widget(paragraph, area);
-}
-
-fn draw_table(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App) {
-    let chunks = Layout::default()
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(area);
-
-    let rows = app.file_stats.iter().map(|f| {
-        let cells = vec![
-            Cell::from(f.0.to_string()),
-            Cell::from(f.1 .0.to_string()),
-            Cell::from(f.1 .1.to_string()),
-            Cell::from(f.1 .2.to_string()),
-        ];
-        Row::new(cells)
-    });
-
-    let table = Table::new(rows)
-        .header(
-            Row::new(vec!["Language", "No.Files", "No.Lines", "Size(Bytes)"])
-                .style(Style::default().fg(Color::LightBlue))
-                .bottom_margin(1),
-        )
-        .block(Block::default().title("File Stats").borders(Borders::ALL))
-        .widths(&[
-            Constraint::Length(10),
-            Constraint::Length(10),
-            Constraint::Length(10),
-            Constraint::Length(12),
-        ]);
-    f.render_widget(table, chunks[1]);
-}
-
-fn draw_gauge(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App) {
-    let chunks = Layout::default()
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(area);
-
-    let temp = &app.lang_stats;
-    let mut data = Vec::new();
-
-    for lang in temp {
-        if *lang.1 as u64 >= 1 {
-            data.push((&lang.0[..], *lang.1 as u64));
-        }
-    }
-    let data = data.as_slice();
-
-    let barchart = BarChart::default()
+    let tabs = Tabs::new(tabs_list)
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Language Stats"),
+                .title("Tabs")
+                .border_style(Style::default().fg(Color::LightBlue))
         )
-        .data(&data)
-        .bar_width(6)
-        .bar_gap(1)
-        .bar_set(symbols::bar::THREE_LEVELS)
-        .value_style(Style::default().fg(Color::Black).bg(Color::LightBlue))
-        .label_style(Style::default().fg(Color::White))
-        .bar_style(Style::default().fg(Color::LightBlue));
+        .highlight_style(Style::default().fg(Color::LightBlue))
+        .select(app.tab as usize);
+    f.render_widget(tabs, chunks[0]);
 
-    f.render_widget(barchart, chunks[0]);
+    if app.tab == 0 {
+        ui::home_tab(f, chunks[1], &app);
+    } else {
+        ui::git_tab(f, chunks[1], &app);
+    }
 }
 
 pub fn setup_terminal(app: &mut App) -> Result<(), io::Error> {
@@ -137,8 +81,17 @@ pub fn setup_terminal(app: &mut App) -> Result<(), io::Error> {
                     if app.scroll.0 > 0 {
                         app.scroll.0 -= 1;
                         terminal.draw(|f| ui(f, &app))?;
-                    } else {
-                        app.scroll.0 = 0;
+                    }
+                }
+                KeyCode::Right => {
+                    if app.tab == 0 {
+                        app.tab = 1;
+                        terminal.draw(|f| ui(f, &app))?;
+                    }
+                }
+                KeyCode::Left => {
+                    if app.tab == 1 {
+                        app.tab = 0;
                         terminal.draw(|f| ui(f, &app))?;
                     }
                 }

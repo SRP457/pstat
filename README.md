@@ -14,6 +14,8 @@ To open the TUI: ```cargo run -- PATH_TO_PROJECT```
 
 Switch Tabs using the left and right arrows
 
+Use the up and down arrows to scroll the project tree
+
 To exit, press: ```q```
 
 ## Screenshots

@@ -37,6 +37,11 @@ OPTIONS:
     -i, --ignore         Use .gitignore if exists
     -p, --path <path>    Path to project directory (Defaults to current path)
     -V, --version        Print version information
+   
+Navigation:
+    Up, Down            Scroll project tree
+    Left, Right         Switch between tabs
+    q                   Quit
 ```
 Examples:
 ```

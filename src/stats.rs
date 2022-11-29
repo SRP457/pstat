@@ -2,29 +2,43 @@ extern crate walkdir;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
+use gitignore;
 use std::path::Path;
 use std::time::SystemTime;
 use walkdir::WalkDir;
+
 
 pub fn count_lines(file: &Path) -> u32 {
     let contents = fs::read_to_string(file).expect("Should have been able to read the file");
     contents.lines().count().try_into().unwrap()
 }
 
-pub fn list_files(path: &str) -> (HashMap<String, (u32, u32, u64)>, u64, HashMap<String, u64>) {
+pub fn list_files(path: &str, ignore: &mut bool) -> (HashMap<String, (u32, u32, u64)>, u64, HashMap<String, u64>) {
     let mut file_counts: HashMap<String, (u32, u32, u64)> = HashMap::new();
     let mut times: HashMap<String, u64> = HashMap::new();
-
+    let mut proj_size: u64 = 0;
     let ext_map = HashMap::from([
         ("rs", String::from("Rust")),
-        ("json", String::from("JSON")),
+        ("r", String::from("R")),
+        ("c", String::from("C")),
+        ("cs", String::from("C#")),
+        ("cpp", String::from("C++")),
+        ("java", String::from("Java")),
+        ("scala", String::from("Scala")),
+        ("erl", String::from("Erlang")),
+        ("html", String::from("HTML")),
+        ("css", String::from("CSS")),
+        ("ejs", String::from("EJS")),
+        ("rb", String::from("Ruby")),
+        ("php", String::from("PHP")),
+        ("js", String::from("JavaScript")),
+        ("ts", String::from("TypeScript")),
         ("py", String::from("Python")),
         ("go", String::from("Go")),
         ("bash", String::from("Bash")),
     ]);
-    let mut proj_size: u64 = 0;
 
-    for file in WalkDir::new(path).into_iter().filter_map(|file| file.ok()) {
+    for file in WalkDir::new(path).into_iter().filter_map(|file| file.ok()) {   
         if file.metadata().unwrap().is_file() {
             let t = Path::new(file.file_name())
                 .extension()
@@ -35,20 +49,31 @@ pub fn list_files(path: &str) -> (HashMap<String, (u32, u32, u64)>, u64, HashMap
                 None => "Undefined",
             };
 
-            let extensions = vec!["rs", "json", "py", "go", "bash"];
+            let extensions: Vec<&str> = ext_map.keys().cloned().collect();
             if extensions.iter().any(|e| ext.eq(*e)) {
-                let mtime = file.metadata().unwrap().modified().expect("0");
+                if *ignore {
+                    let gfile = gitignore::File::new(Path::new("./.gitignore"));
+                    if let Ok(gfile1) = gfile {
+                        let gfile = gfile1;
+                        if gfile.is_excluded(file.path()).unwrap() {
+                            continue;
+                       }
+                    } else {
+                        *ignore = false;
+                    }
+                }
 
+                let mtime = file.metadata().unwrap().modified().expect("0");
                 let mtime = mtime
                     .duration_since(SystemTime::UNIX_EPOCH)
                     .expect("File A thinks it was created before Epoch")
                     .as_secs();
 
                 times.insert(file.file_name().to_str().expect("msg").to_string(), mtime);
-
                 let size = file.metadata().unwrap().len();
-                proj_size += size;
                 let lc = count_lines(file.path());
+                proj_size += size;
+
                 if let Some(extension) = ext_map.get(&ext) {
                     if let Some(count) = file_counts.get(extension) {
                         file_counts.insert(

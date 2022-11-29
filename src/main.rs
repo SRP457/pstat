@@ -1,6 +1,7 @@
-use std::env;
 use std::io;
-use std::process::Command;
+use std::path::Path;
+use clap::{App, Arg};
+use std::process::{Command, Stdio};
 mod ui;
 
 mod stats;
@@ -8,16 +9,56 @@ use crate::stats::{get_percentages, list_files};
 
 mod terminal;
 use crate::terminal::setup_terminal;
-use crate::terminal::App;
+use crate::terminal::TApp;
+
+fn get_tree(ignore: bool, path: &str) -> String {
+    if ignore && Path::new("./.gitignore").exists() {
+        let git_ls = Command::new("git")
+            .arg("ls-tree")
+            .arg("-r")                
+            .arg("--name-only")                
+            .arg("HEAD")                
+            .stdout(Stdio::piped())     
+            .spawn()                      
+            .unwrap();            
+                 
+        let tree = Command::new("tree")
+                .arg("--fromfile")
+                .stdin(Stdio::from(git_ls.stdout.unwrap())) 
+                .stdout(Stdio::piped())
+                .spawn()
+                .unwrap();
+
+        return String::from_utf8(tree.wait_with_output().unwrap().stdout).unwrap();
+    } else {
+        let output1 = Command::new("tree")
+            .arg(path)
+            .output()
+            .expect("Tree command failed");
+        return String::from_utf8(output1.stdout).unwrap();
+    }
+}
 
 fn main() -> Result<(), io::Error> {
-    let args: Vec<String> = env::args().collect();
-    let path = match args.get(1) {
-        Some(path) => path,
-        None => ".",
-    };
+    let matches = App::new("Pstat")
+        .version("0.1.0")
+        .author("SP457")
+        .about("Project Statistics TUI")
+        .arg(Arg::with_name("path")
+                 .short('p')
+                 .long("path")
+                 .takes_value(true)
+                 .help("Path to project directory"))
+        .arg(Arg::with_name("ignore")
+                 .short('i')
+                 .long("ignore")
+                 .help("Use .gitignore if exists"))
+        .get_matches();
 
-    let (file_stats, proj_size, times) = list_files(path);
+    let path = matches.value_of("path").unwrap_or(".");
+    let mut ignore = matches.occurrences_of("ignore") > 0;
+   
+    let (file_stats, proj_size, times) = list_files(path, &mut ignore);
     let lang_stats = get_percentages(&file_stats, proj_size);
 
     let mut count_time: Vec<(&String, &u64)> = times.iter().collect();
@@ -28,11 +69,6 @@ fn main() -> Result<(), io::Error> {
         file_time.push(i.0.to_string());
     }
 
-    let output = Command::new("tree")
-        .arg(path)
-        .output()
-        .expect("Tree command failed");
-    let output = String::from_utf8(output.stdout).unwrap();
 
     let branches = Command::new("git")
         .arg("-C")
@@ -59,9 +95,9 @@ fn main() -> Result<(), io::Error> {
         .expect("git status command failed");
     let status = String::from_utf8(status.stdout).unwrap();
 
-    let mut app = App {
+    let mut app = TApp {
         scroll: (0, 0),
-        tree: output,
+        tree: get_tree(ignore, path),
         path: String::from(path),
         file_stats,
         lang_stats,

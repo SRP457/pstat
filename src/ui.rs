@@ -1,4 +1,4 @@
-use crate::terminal::App;
+use crate::terminal::TApp;
 use std::io::{self, Stdout};
 use tui::{
     backend::CrosstermBackend,
@@ -9,7 +9,7 @@ use tui::{
     Frame,
 };
 
-fn git_branch(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App) {
+fn git_branch(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TApp) {
     let chunks = Layout::default()
         .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
         .split(area);
@@ -37,7 +37,7 @@ fn git_branch(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App
     f.render_widget(paragraph, chunks[1]);
 }
 
-fn git_log(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App) {
+fn git_log(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TApp) {
     let log = app.log.clone();
     let paragraph = Paragraph::new(log)
         .block(
@@ -50,7 +50,7 @@ fn git_log(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App) {
     f.render_widget(paragraph, area);
 }
 
-fn draw_tree(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App) {
+fn draw_tree(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TApp) {
     let tree = app.tree.clone();
     let paragraph = Paragraph::new(tree)
         .block(
@@ -64,7 +64,7 @@ fn draw_tree(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App)
     f.render_widget(paragraph, area);
 }
 
-fn draw_table(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App) {
+fn draw_table(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TApp) {
     let chunks = Layout::default()
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
         .split(area);
@@ -116,7 +116,7 @@ fn draw_table(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App
     f.render_widget(paragraph, chunks1[1]);
 }
 
-fn draw_gauge(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App) {
+fn draw_gauge(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TApp) {
     let chunks = Layout::default()
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
         .split(area);
@@ -149,7 +149,7 @@ fn draw_gauge(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &App
     f.render_widget(barchart, chunks[0]);
 }
 
-pub fn home_tab(f: &mut Frame<CrosstermBackend<Stdout>>, area: Rect, app: &App) {
+pub fn home_tab(f: &mut Frame<CrosstermBackend<Stdout>>, area: Rect, app: &TApp) {
     let block = Block::default()
         .title("Project Stats")
         .borders(Borders::ALL)
@@ -167,7 +167,7 @@ pub fn home_tab(f: &mut Frame<CrosstermBackend<Stdout>>, area: Rect, app: &App) 
     draw_table(f, chunks[1], app);
 }
 
-pub fn git_tab(f: &mut Frame<CrosstermBackend<Stdout>>, area: Rect, app: &App) {
+pub fn git_tab(f: &mut Frame<CrosstermBackend<Stdout>>, area: Rect, app: &TApp) {
     let block = Block::default()
         .title("Git Stats")
         .borders(Borders::ALL)

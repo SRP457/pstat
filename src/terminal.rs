@@ -18,7 +18,7 @@ use tui::{
 
 use crate::ui;
 
-pub struct App {
+pub struct TApp {
     pub scroll: (u16, u16),
     pub tree: String,
     pub path: String,
@@ -31,7 +31,7 @@ pub struct App {
     pub tab: u32,
 }
 
-fn ui(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App) {
+fn ui(f: &mut Frame<CrosstermBackend<Stdout>>, app: &TApp) {
     let chunks = Layout::default()
         .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
         .split(f.size());
@@ -59,7 +59,7 @@ fn ui(f: &mut Frame<CrosstermBackend<Stdout>>, app: &App) {
     }
 }
 
-pub fn setup_terminal(app: &mut App) -> Result<(), io::Error> {
+pub fn setup_terminal(app: &mut TApp) -> Result<(), io::Error> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;

@@ -1,10 +1,12 @@
 use crate::terminal::TApp;
-use std::io::{self, Stdout};
+use std::{
+    cmp::Ordering,
+    io::{self, Stdout},
+};
 use tui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    symbols,
     widgets::{BarChart, Block, Borders, Cell, Paragraph, Row, Table, Wrap},
     Frame,
 };
@@ -74,7 +76,10 @@ fn draw_table(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TAp
         .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
         .split(chunks[1]);
 
-    let rows = app.file_stats.iter().map(|f| {
+    let mut count_time: Vec<(&String, &(u32, u32, u64))> = app.file_stats.iter().collect();
+    count_time.sort_by(|a, b| b.1.2.cmp(&a.1.2));
+
+    let rows = count_time.iter().map(|f| {
         let cells = vec![
             Cell::from(f.0.to_string()),
             Cell::from(f.1 .0.to_string()),
@@ -97,15 +102,20 @@ fn draw_table(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TAp
                 .border_style(Style::default().fg(Color::LightBlue)),
         )
         .widths(&[
-            Constraint::Length(10),
-            Constraint::Length(10),
-            Constraint::Length(10),
+            Constraint::Length(9),
+            Constraint::Length(9),
+            Constraint::Length(9),
             Constraint::Length(12),
         ]);
     f.render_widget(table, chunks1[0]);
 
-    let file_time = app.file_time.clone().join("\n");
-    let paragraph = Paragraph::new(file_time)
+    let mut files = String::new();
+    for (ind, f) in app.file_time.clone().iter().enumerate() {
+        let temp = (ind + 1).to_string() + ". " + f + "\n";
+        files.push_str(&temp[..]);
+    }
+    // let file_time = app.file_time.clone().join("\n");
+    let paragraph = Paragraph::new(files)
         .block(
             Block::default()
                 .borders(Borders::ALL)
@@ -121,9 +131,17 @@ fn draw_gauge(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TAp
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
         .split(area);
 
-    let temp = &app.lang_stats;
-    let mut data = Vec::new();
+    // let temp = &app.lang_stats;
+    let mut temp: Vec<(&String, &f64)> = app.lang_stats.iter().collect();
+    temp.sort_by(|a, b| {
+        if a.1 > b.1 {
+            Ordering::Less
+        } else {
+            Ordering::Greater
+        }
+    });
 
+    let mut data = Vec::new();
     for lang in temp {
         if *lang.1 as u64 >= 1 {
             data.push((&lang.0[..], *lang.1 as u64));
@@ -135,13 +153,12 @@ fn draw_gauge(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TAp
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Language Stats")
+                .title("Language Distribution")
                 .border_style(Style::default().fg(Color::LightBlue)),
         )
         .data(&data)
         .bar_width(6)
-        .bar_gap(1)
-        .bar_set(symbols::bar::THREE_LEVELS)
+        .bar_gap(2)
         .value_style(Style::default().fg(Color::Black).bg(Color::LightBlue))
         .label_style(Style::default().fg(Color::White))
         .bar_style(Style::default().fg(Color::LightBlue));

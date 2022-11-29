@@ -73,13 +73,13 @@ pub fn setup_terminal(app: &mut TApp) -> Result<(), io::Error> {
             match key.code {
                 KeyCode::Down => {
                     let lines: u16 = app.tree.lines().count().try_into().unwrap();
-                    if lines - app.scroll.0 > 15 {
+                    if lines - app.scroll.0 > 15 && app.tab == 0 {
                         app.scroll.0 += 1;
                         terminal.draw(|f| ui(f, &app))?;
                     }
                 }
                 KeyCode::Up => {
-                    if app.scroll.0 > 0 {
+                    if app.scroll.0 > 0 && app.tab == 0 {
                         app.scroll.0 -= 1;
                         terminal.draw(|f| ui(f, &app))?;
                     }

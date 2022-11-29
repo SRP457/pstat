@@ -1,19 +1,21 @@
 extern crate walkdir;
+use gitignore;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
-use gitignore;
 use std::path::Path;
 use std::time::SystemTime;
 use walkdir::WalkDir;
-
 
 pub fn count_lines(file: &Path) -> u32 {
     let contents = fs::read_to_string(file).expect("Should have been able to read the file");
     contents.lines().count().try_into().unwrap()
 }
 
-pub fn list_files(path: &str, ignore: &mut bool) -> (HashMap<String, (u32, u32, u64)>, u64, HashMap<String, u64>) {
+pub fn list_files(
+    path: &str,
+    ignore: &mut bool,
+) -> (HashMap<String, (u32, u32, u64)>, u64, HashMap<String, u64>) {
     let mut file_counts: HashMap<String, (u32, u32, u64)> = HashMap::new();
     let mut times: HashMap<String, u64> = HashMap::new();
     let mut proj_size: u64 = 0;
@@ -38,7 +40,7 @@ pub fn list_files(path: &str, ignore: &mut bool) -> (HashMap<String, (u32, u32, 
         ("bash", String::from("Bash")),
     ]);
 
-    for file in WalkDir::new(path).into_iter().filter_map(|file| file.ok()) {   
+    for file in WalkDir::new(path).into_iter().filter_map(|file| file.ok()) {
         if file.metadata().unwrap().is_file() {
             let t = Path::new(file.file_name())
                 .extension()
@@ -57,7 +59,7 @@ pub fn list_files(path: &str, ignore: &mut bool) -> (HashMap<String, (u32, u32, 
                         let gfile = gfile1;
                         if gfile.is_excluded(file.path()).unwrap() {
                             continue;
-                       }
+                        }
                     } else {
                         *ignore = false;
                     }
@@ -66,7 +68,7 @@ pub fn list_files(path: &str, ignore: &mut bool) -> (HashMap<String, (u32, u32, 
                 let mtime = file.metadata().unwrap().modified().expect("0");
                 let mtime = mtime
                     .duration_since(SystemTime::UNIX_EPOCH)
-                    .expect("File A thinks it was created before Epoch")
+                    .expect("File thinks it was created before Epoch")
                     .as_secs();
 
                 times.insert(file.file_name().to_str().expect("msg").to_string(), mtime);

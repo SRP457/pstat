@@ -1,6 +1,6 @@
+use clap::{App, Arg};
 use std::io;
 use std::path::Path;
-use clap::{App, Arg};
 use std::process::{Command, Stdio};
 mod ui;
 
@@ -15,24 +15,25 @@ fn get_tree(ignore: bool, path: &str) -> String {
     if ignore && Path::new("./.gitignore").exists() {
         let git_ls = Command::new("git")
             .arg("ls-tree")
-            .arg("-r")                
-            .arg("--name-only")                
-            .arg("HEAD")                
-            .stdout(Stdio::piped())     
-            .spawn()                      
-            .unwrap();            
-                 
+            .arg("-r")
+            .arg("--name-only")
+            .arg("HEAD")
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+
         let tree = Command::new("tree")
-                .arg("--fromfile")
-                .stdin(Stdio::from(git_ls.stdout.unwrap())) 
-                .stdout(Stdio::piped())
-                .spawn()
-                .unwrap();
+            .arg("--fromfile")
+            .stdin(Stdio::from(git_ls.stdout.unwrap()))
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
 
         return String::from_utf8(tree.wait_with_output().unwrap().stdout).unwrap();
     } else {
         let output1 = Command::new("tree")
             .arg(path)
+            // .arg("-a")
             .output()
             .expect("Tree command failed");
         return String::from_utf8(output1.stdout).unwrap();
@@ -44,20 +45,24 @@ fn main() -> Result<(), io::Error> {
         .version("0.1.0")
         .author("SP457")
         .about("Project Statistics TUI")
-        .arg(Arg::with_name("path")
-                 .short('p')
-                 .long("path")
-                 .takes_value(true)
-                 .help("Path to project directory"))
-        .arg(Arg::with_name("ignore")
-                 .short('i')
-                 .long("ignore")
-                 .help("Use .gitignore if exists"))
+        .arg(
+            Arg::with_name("path")
+                .short('p')
+                .long("path")
+                .takes_value(true)
+                .help("Path to project directory (Defaults to current path)"),
+        )
+        .arg(
+            Arg::with_name("ignore")
+                .short('i')
+                .long("ignore")
+                .help("Use .gitignore if exists"),
+        )
         .get_matches();
 
     let path = matches.value_of("path").unwrap_or(".");
     let mut ignore = matches.occurrences_of("ignore") > 0;
-   
+
     let (file_stats, proj_size, times) = list_files(path, &mut ignore);
     let lang_stats = get_percentages(&file_stats, proj_size);
 
@@ -68,7 +73,6 @@ fn main() -> Result<(), io::Error> {
     for i in count_time.iter().take(5) {
         file_time.push(i.0.to_string());
     }
-
 
     let branches = Command::new("git")
         .arg("-C")

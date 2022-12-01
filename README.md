@@ -1,5 +1,5 @@
 # pstat
-Do you want to boast about how many lines of code you've written, see how your project structure looks, what languages you've used to code, see recently modified files, all in one glance? 
+Do you want to know how many lines of code you've written, see how your project structure looks, what languages you've used to code, see recently modified files, all in one glance? 
 
 pstat (Project Stat), is a TUI built in Rust. Get all important stats of your project with a single glance!
 Using a Git repo? Get all important stats on one screen! 

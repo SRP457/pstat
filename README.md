@@ -33,23 +33,30 @@ USAGE:
     pstat [OPTIONS]
 
 OPTIONS:
-    -h, --help           Print help information
-    -i, --ignore         Use .gitignore if exists
-    -p, --path <path>    Path to project directory (Defaults to current path)
-    -V, --version        Print version information
+    -c, --color <color>    Color scheme to use
+    -h, --help             Print help information
+    -i, --ignore           Use .gitignore if exists
+    -p, --path <path>      Path to project directory (Defaults to current path)
+    -V, --version          Print version information
    
 Navigation:
-    Up, Down            Scroll project tree
+    Up, Down            Scroll project tree or git status
     Left, Right         Switch between tabs
+    v                   Toggle git log graph
     q                   Quit
+
+Colors:
+    Black, Red, Green, Yellow, Blue, Magenta, Cyan, Gray 
+    DarkGray, LightRed, LightGreen, LightYellow, LightBlue, 
+    LightMagenta, LightCyan, White 
 ```
 Examples:
 ```
 // Using cargo
-cargo run --release -- -p ..path/to/project
+cargo run --release -- -p path/to/project
 
 // Using binary
-pstat -p .../path/to/project
+pstat -p /path/to/project
 ```
 
 ## Screenshots

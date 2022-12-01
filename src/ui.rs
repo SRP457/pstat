@@ -22,7 +22,7 @@ fn git_branch(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TAp
             Block::default()
                 .borders(Borders::ALL)
                 .title("Git Branches")
-                .border_style(Style::default().fg(Color::LightBlue)),
+                .border_style(Style::default().fg(app.app_color)),
         )
         .wrap(Wrap { trim: true });
     f.render_widget(paragraph, chunks[0]);
@@ -33,20 +33,25 @@ fn git_branch(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TAp
             Block::default()
                 .borders(Borders::ALL)
                 .title("Git Status")
-                .border_style(Style::default().fg(Color::LightBlue)),
+                .border_style(Style::default().fg(app.app_color)),
         )
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap { trim: true })
+        .scroll(app.status_scroll);
     f.render_widget(paragraph, chunks[1]);
 }
 
 fn git_log(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TApp) {
-    let log = app.log.clone();
+    let log = if app.verbose {
+        app.log_tree.clone()
+    } else {
+        app.log.clone()
+    };
     let paragraph = Paragraph::new(log)
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .title("Git Log")
-                .border_style(Style::default().fg(Color::LightBlue)),
+                .border_style(Style::default().fg(app.app_color)),
         )
         .wrap(Wrap { trim: true });
     f.render_widget(paragraph, area);
@@ -59,7 +64,7 @@ fn draw_tree(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TApp
             Block::default()
                 .borders(Borders::ALL)
                 .title("Project Tree")
-                .border_style(Style::default().fg(Color::LightBlue)),
+                .border_style(Style::default().fg(app.app_color)),
         )
         .wrap(Wrap { trim: true })
         .scroll(app.scroll);
@@ -77,11 +82,11 @@ fn draw_table(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TAp
         .split(chunks[1]);
 
     let mut count_time: Vec<(&String, &(u32, u32, u64))> = app.file_stats.iter().collect();
-    count_time.sort_by(|a, b| b.1.2.cmp(&a.1.2));
+    count_time.sort_by(|a, b| b.1 .2.cmp(&a.1 .2));
 
     let rows = count_time.iter().map(|f| {
         let cells = vec![
-            Cell::from(f.0.to_string()),
+            Cell::from(f.0.to_string().trim().to_owned()),
             Cell::from(f.1 .0.to_string()),
             Cell::from(f.1 .1.to_string()),
             Cell::from(f.1 .2.to_string()),
@@ -91,21 +96,21 @@ fn draw_table(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TAp
 
     let table = Table::new(rows)
         .header(
-            Row::new(vec!["Language", "No.Files", "No.Lines", "Size(Bytes)"])
-                .style(Style::default().fg(Color::LightBlue))
+            Row::new(vec!["Language", "No.Files", "No.Lines", "Size(B)"])
+                .style(Style::default().fg(app.app_color))
                 .bottom_margin(1),
         )
         .block(
             Block::default()
                 .title("File Stats")
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::LightBlue)),
+                .border_style(Style::default().fg(app.app_color)),
         )
         .widths(&[
-            Constraint::Length(9),
-            Constraint::Length(9),
-            Constraint::Length(9),
             Constraint::Length(12),
+            Constraint::Length(10),
+            Constraint::Length(10),
+            Constraint::Length(10),
         ]);
     f.render_widget(table, chunks1[0]);
 
@@ -120,7 +125,7 @@ fn draw_table(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TAp
             Block::default()
                 .borders(Borders::ALL)
                 .title("Recently Modified")
-                .border_style(Style::default().fg(Color::LightBlue)),
+                .border_style(Style::default().fg(app.app_color)),
         )
         .wrap(Wrap { trim: true });
     f.render_widget(paragraph, chunks1[1]);
@@ -154,14 +159,14 @@ fn draw_gauge(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TAp
             Block::default()
                 .borders(Borders::ALL)
                 .title("Language Distribution")
-                .border_style(Style::default().fg(Color::LightBlue)),
+                .border_style(Style::default().fg(app.app_color)),
         )
         .data(&data)
         .bar_width(6)
         .bar_gap(2)
-        .value_style(Style::default().fg(Color::Black).bg(Color::LightBlue))
+        .value_style(Style::default().fg(Color::Black).bg(app.app_color))
         .label_style(Style::default().fg(Color::White))
-        .bar_style(Style::default().fg(Color::LightBlue));
+        .bar_style(Style::default().fg(app.app_color));
 
     f.render_widget(barchart, chunks[0]);
 }
@@ -170,7 +175,7 @@ pub fn home_tab(f: &mut Frame<CrosstermBackend<Stdout>>, area: Rect, app: &TApp)
     let block = Block::default()
         .title("Project Stats")
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::LightBlue));
+        .border_style(Style::default().fg(app.app_color));
     f.render_widget(block, area);
 
     let chunks = Layout::default()
@@ -188,7 +193,7 @@ pub fn git_tab(f: &mut Frame<CrosstermBackend<Stdout>>, area: Rect, app: &TApp) 
     let block = Block::default()
         .title("Git Stats")
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::LightBlue));
+        .border_style(Style::default().fg(app.app_color));
     f.render_widget(block, area);
 
     let chunks = Layout::default()

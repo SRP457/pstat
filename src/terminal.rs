@@ -20,15 +20,19 @@ use crate::ui;
 
 pub struct TApp {
     pub scroll: (u16, u16),
+    pub status_scroll: (u16, u16),
     pub tree: String,
     pub path: String,
     pub branches: String,
     pub log: String,
+    pub log_tree: String,
     pub status: String,
     pub lang_stats: HashMap<String, f64>,
     pub file_stats: HashMap<String, (u32, u32, u64)>,
     pub file_time: Vec<String>,
+    pub app_color: Color,
     pub tab: u32,
+    pub verbose: bool,
 }
 
 fn ui(f: &mut Frame<CrosstermBackend<Stdout>>, app: &TApp) {
@@ -46,9 +50,9 @@ fn ui(f: &mut Frame<CrosstermBackend<Stdout>>, app: &TApp) {
             Block::default()
                 .borders(Borders::ALL)
                 .title("Tabs")
-                .border_style(Style::default().fg(Color::LightBlue)),
+                .border_style(Style::default().fg(app.app_color)),
         )
-        .highlight_style(Style::default().fg(Color::LightBlue))
+        .highlight_style(Style::default().fg(app.app_color))
         .select(app.tab as usize);
     f.render_widget(tabs, chunks[0]);
 
@@ -73,14 +77,22 @@ pub fn setup_terminal(app: &mut TApp) -> Result<(), io::Error> {
             match key.code {
                 KeyCode::Down => {
                     let lines: u16 = app.tree.lines().count().try_into().unwrap();
-                    if lines - app.scroll.0 > 15 && app.tab == 0 {
+                    let status_lines: u16 = app.status.lines().count().try_into().unwrap();
+
+                    if app.tab == 0 && lines - app.scroll.0 > 20 {
                         app.scroll.0 += 1;
+                        terminal.draw(|f| ui(f, &app))?;
+                    } else if app.tab == 1 && status_lines - app.status_scroll.0 > 13 {
+                        app.status_scroll.0 += 1;
                         terminal.draw(|f| ui(f, &app))?;
                     }
                 }
                 KeyCode::Up => {
-                    if app.scroll.0 > 0 && app.tab == 0 {
+                    if app.tab == 0 && app.scroll.0 > 0 {
                         app.scroll.0 -= 1;
+                        terminal.draw(|f| ui(f, &app))?;
+                    } else if app.tab == 1 && app.status_scroll.0 > 0 {
+                        app.status_scroll.0 -= 1;
                         terminal.draw(|f| ui(f, &app))?;
                     }
                 }
@@ -93,6 +105,12 @@ pub fn setup_terminal(app: &mut TApp) -> Result<(), io::Error> {
                 KeyCode::Left => {
                     if app.tab == 1 {
                         app.tab = 0;
+                        terminal.draw(|f| ui(f, &app))?;
+                    }
+                }
+                KeyCode::Char('v') => {
+                    if app.tab == 1 {
+                        app.verbose = if app.verbose { false } else { true };
                         terminal.draw(|f| ui(f, &app))?;
                     }
                 }

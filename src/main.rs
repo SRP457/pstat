@@ -1,44 +1,18 @@
+use app::{get_branches, get_log, get_log_tree, get_status, get_tree};
 use clap::{App, Arg};
+use stats::get_stats;
 use std::io;
-use std::path::Path;
-use std::process::{Command, Stdio};
+use tui::style::Color;
+
+mod app;
 mod ui;
 
 mod stats;
-use crate::stats::{get_percentages, list_files};
+use crate::stats::get_percentages;
 
 mod terminal;
 use crate::terminal::setup_terminal;
 use crate::terminal::TApp;
-
-fn get_tree(ignore: bool, path: &str) -> String {
-    if ignore && Path::new("./.gitignore").exists() {
-        let git_ls = Command::new("git")
-            .arg("ls-tree")
-            .arg("-r")
-            .arg("--name-only")
-            .arg("HEAD")
-            .stdout(Stdio::piped())
-            .spawn()
-            .unwrap();
-
-        let tree = Command::new("tree")
-            .arg("--fromfile")
-            .stdin(Stdio::from(git_ls.stdout.unwrap()))
-            .stdout(Stdio::piped())
-            .spawn()
-            .unwrap();
-
-        return String::from_utf8(tree.wait_with_output().unwrap().stdout).unwrap();
-    } else {
-        let output1 = Command::new("tree")
-            .arg(path)
-            // .arg("-a")
-            .output()
-            .expect("Tree command failed");
-        return String::from_utf8(output1.stdout).unwrap();
-    }
-}
 
 fn main() -> Result<(), io::Error> {
     let matches = App::new("Pstat")
@@ -58,58 +32,78 @@ fn main() -> Result<(), io::Error> {
                 .long("ignore")
                 .help("Use .gitignore if exists"),
         )
+        .arg(
+            Arg::with_name("color")
+                .short('c')
+                .long("color")
+                .takes_value(true)
+                .help("Color scheme to use (Refer to colors supported by tui::style::Color)"),
+        )
         .get_matches();
 
     let path = matches.value_of("path").unwrap_or(".");
+    let color = matches.value_of("color").unwrap_or("LightBlue");
+
+    let app_color = match color {
+        "Black" => Color::Black,
+        "Red" => Color::Red,
+        "Green" => Color::Green,
+        "Yellow" => Color::Yellow,
+        "Blue" => Color::Blue,
+        "Magenta" => Color::Magenta,
+        "Cyan" => Color::Cyan,
+        "Gray" => Color::Gray,
+        "DarkGray" => Color::DarkGray,
+        "LightRed" => Color::LightRed,
+        "LightGreen" => Color::LightGreen,
+        "LightYellow" => Color::LightYellow,
+        "LightBlue" => Color::LightBlue,
+        "LightMagenta" => Color::LightMagenta,
+        "LightCyan" => Color::LightCyan,
+        "White" => Color::White,
+        _ => Color::White,
+    };
+
     let mut ignore = matches.occurrences_of("ignore") > 0;
 
-    let (file_stats, proj_size, times) = list_files(path, &mut ignore);
+    if ignore && !(path.eq(".") || path.eq("./")) {
+        println!("Cannot use -i with another directory other than the current one.");
+        println!("Either use the current working directory or omit the -i flag.");
+        return Ok(());
+    }
+
+    let (file_stats, proj_size, times) = get_stats(path, &mut ignore);
     let lang_stats = get_percentages(&file_stats, proj_size);
 
     let mut count_time: Vec<(&String, &u64)> = times.iter().collect();
-    count_time.sort_by(|a, b| b.1.cmp(a.1));
+    count_time.sort_by(|a, b| a.1.cmp(b.1));
 
     let mut file_time: Vec<String> = Vec::new();
     for i in count_time.iter().take(5) {
         file_time.push(i.0.to_string());
     }
 
-    let branches = Command::new("git")
-        .arg("-C")
-        .arg(path)
-        .arg("branch")
-        .output()
-        .expect("git branch command failed");
-    let branches = String::from_utf8(branches.stdout).unwrap();
-
-    let log = Command::new("git")
-        .arg("-C")
-        .arg(path)
-        .arg("log")
-        .arg("-n 5")
-        .output()
-        .expect("git log command failed");
-    let log = String::from_utf8(log.stdout).unwrap();
-
-    let status = Command::new("git")
-        .arg("-C")
-        .arg(path)
-        .arg("status")
-        .output()
-        .expect("git status command failed");
-    let status = String::from_utf8(status.stdout).unwrap();
+    let branches = get_branches(path);
+    let log_tree = get_log_tree(path);
+    let log = get_log(path);
+    let status = get_status(path);
+    let tree = get_tree(ignore, path);
 
     let mut app = TApp {
         scroll: (0, 0),
-        tree: get_tree(ignore, path),
+        status_scroll: (0, 0),
+        tree,
         path: String::from(path),
         file_stats,
         lang_stats,
         branches,
         log,
+        log_tree,
         status,
         file_time,
+        app_color,
         tab: 0,
+        verbose: false,
     };
 
     setup_terminal(&mut app)

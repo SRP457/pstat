@@ -78,7 +78,7 @@ fn draw_table(f: &mut Frame<CrosstermBackend<io::Stdout>>, area: Rect, app: &TAp
 
     let chunks1 = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
+        .constraints([Constraint::Percentage(65), Constraint::Percentage(35)].as_ref())
         .split(chunks[1]);
 
     let mut count_time: Vec<(&String, &(u32, u32, u64))> = app.file_stats.iter().collect();
@@ -181,7 +181,7 @@ pub fn home_tab(f: &mut Frame<CrosstermBackend<Stdout>>, area: Rect, app: &TApp)
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .margin(2)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .constraints([Constraint::Percentage(45), Constraint::Percentage(55)].as_ref())
         .split(area);
 
     draw_tree(f, chunks[0], app);

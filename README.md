@@ -52,7 +52,7 @@ Colors:
 ```
 Examples:
 ```
-// Using cargo
+// Using cargo  
 cargo run --release -- -p path/to/project
 
 // Using binary

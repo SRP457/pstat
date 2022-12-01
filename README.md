@@ -59,7 +59,7 @@ cargo run --release -- -p path/to/project
 pstat -p /path/to/project
 ```
 
-## Screenshots
+## Demo
 
 Note that the color and background of the terminal is subject to your color scheme and settings.
 

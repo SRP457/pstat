@@ -42,6 +42,7 @@ pub fn get_stats(
         ("ts", String::from("TypeScript")),
         ("py", String::from("Python")),
         ("go", String::from("  Go")),
+        ("cu", String::from(" CUDA")),
         ("bash", String::from(" Bash")),
     ]);
 
@@ -64,6 +65,10 @@ pub fn get_stats(
                 if !git_ls.contains(&path2) {
                     continue;
                 }
+            }
+
+            if file.file_name().to_string_lossy().matches(".").count() > 1 {
+                continue;
             }
 
             let t = Path::new(file.file_name())

@@ -13,6 +13,19 @@ pstat currently supports:
 
 Currently supports basic projects and languages. Support for other languages will be coming soon.
 
+## Requirements
+### Windows
+You will need `gitree` installed on your system. To install it run:
+```
+npm i -g @jpwilliams/gitree
+```
+
+### Linux
+You will the `tree` command installed on your system. To install it run:
+```
+sudo apt-get install tree
+```
+
 ## Setup
 To use pstat, you'll need to have `Rust` or `Cargo` installed. 
 ```

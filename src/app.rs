@@ -12,16 +12,12 @@ pub fn get_tree(ignore: bool, path: &str) -> String {
             .spawn()
             .unwrap();
 
-        let tree = if cfg!(target_os = "windows") {
+        if cfg!(windows) {
             let tree = Command::new("cmd")
-                .arg("/C")
-                .arg("tree")
-                .arg("--fromfile")
-                .stdin(Stdio::from(git_ls.stdout.unwrap()))
-                .stdout(Stdio::piped())
-                .spawn()
-                .unwrap(); 
-            tree   
+                .args(&["/C", "gitree", path])
+                .output()
+                .expect("gitree failed");
+            return String::from_utf8(tree.stdout).unwrap();
         } else {
             let tree = Command::new("tree")
                 .arg("--fromfile")
@@ -29,18 +25,15 @@ pub fn get_tree(ignore: bool, path: &str) -> String {
                 .stdout(Stdio::piped())
                 .spawn()
                 .unwrap();
-            tree
+            return String::from_utf8(tree.wait_with_output().unwrap().stdout).unwrap();
         };
 
-        return String::from_utf8(tree.wait_with_output().unwrap().stdout).unwrap();
     } else {
-        if cfg!(target_os = "Windows") {
+        if cfg!(windows) {
             let output1 = Command::new("cmd")
-                .arg("/C")
-                .arg("tree")
-                .arg(path)
+                .args(&["/C", "TREE", path, "/f", "/a"]) 
                 .output()
-                .expect("Tree command failed");
+                .expect("Tree command failed here");
             return String::from_utf8(output1.stdout).unwrap();
         } else {
             let output1 = Command::new("tree")

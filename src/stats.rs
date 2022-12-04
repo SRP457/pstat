@@ -62,9 +62,17 @@ pub fn get_stats(
                     .expect("Coudn't strip prefix")
                     .to_str()
                     .unwrap();
-                if !git_ls.contains(&path2) {
-                    continue;
-                }
+                
+                if cfg!(windows) {
+                    let path2 = &path2.replace("\\", "/")[..];
+                    if !git_ls.contains(&path2) {
+                        continue;
+                    }
+                } else {
+                    if !git_ls.contains(&path2) {
+                        continue;
+                    }
+                };
             }
 
             if file.file_name().to_string_lossy().matches(".").count() > 1 {

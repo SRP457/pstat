@@ -71,7 +71,7 @@ pub fn get_log_tree(path: &str) -> String {
         .arg("--abbrev-commit")
         .output()
         .expect("git log command failed");
-    let mut log = String::from_utf8(log.stdout).unwrap();
+        let mut log = String::from_utf8(log.stdout).unwrap();
     if log == "" {
         log = String::from("Not a git repository. No log found.");
     }
